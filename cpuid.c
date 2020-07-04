@@ -430,16 +430,22 @@ void cpuid_print_extend_features( size_t n, const extend_feature_t* out )
   const extend_feature_t* p=out;
   const char* item_null[32]={""};
   const char* item_lv1b[32]={
-      "fsgsbase","ia32_tsc_adjust","","bmi1","hle","avx2","","smep"
-     ,"bmi2","movsb/stosb","invpcid","rtm","pqm","fpucs/fpuds","","pqe"
-     ,"","","rdseed","adx","smap","","",""
-     ,"","","","","","","",""
+      "fsgsbase","ia32_tsc_adjust","sgx","bmi1","hle","avx2","","smep"
+     ,"bmi2","movsb/stosb","invpcid","rtm","pqm","fpucs/fpuds","impx","pqe"
+     ,"avx512f","avx512dq","rdseed","adx","smap","avx512_ifma","","clflushopt"
+     ,"clwb","proctrace","avx512pf","avx512er","avx512cd","sha","avx512bw","avx512vl"
   };
   const char* item_lv1c[32]={
-      "prefetchwt1","","","","","","",""
+      "prefetchwt1","avx512_vbmi","umip","pku","ospke","waitpkg","avx512_vbmi2",""
+     ,"gfni","vaes","vpclmulqdq","avx512_vnni","avx512_bitalg","","avx512_vpopcntdq",""
+     ,"","","","","","","rdpid",""
+     ,"","cldemote","","movdiri","movdir64b","","sgx_lc",""
+  };
+  const char* item_lv1d[32]={
+      "","","avx512_4vnniw","avx512_4fmaps","fast_short_rep_mov","","",""
      ,"","","","","","","",""
-     ,"","","","","","","",""
-     ,"","","","","","","",""
+     ,"","","pconfig","","","","",""
+     ,"","","iprs/ibpb","stibp","","ia32_msr","","ssbd"
   };
 
   const char** features[MAX_FTLEVEL][3];
@@ -448,7 +454,7 @@ void cpuid_print_extend_features( size_t n, const extend_feature_t* out )
 
   features[0][0]=item_lv1b;
   features[0][1]=item_lv1c;
-  features[0][2]=item_null;
+  features[0][2]=item_lv1d;
  
   for( k=1; k<MAX_FTLEVEL; k++ ){
     features[k][0]=item_null;
@@ -499,7 +505,7 @@ void cpuid_print_extend_topology( size_t n, const extend_topology_t* out )
  
 void cpuid_print_extend_info( const extend_info_t* out )
 {
-  const char* features[3][32]=
+  const char* features[4][32]=
   {
     {
       "lahf/sahf ","","","","","lzcnt ","",""
@@ -519,6 +525,12 @@ void cpuid_print_extend_info( const extend_info_t* out )
      ,"","","","","","","",""
      ,"","","","","","","",""
     } 
+   ,{ // 0x80000008/ebx
+      "","","","","","","",""
+     ,"","wbnoinvd","","","","","",""
+     ,"","","","","","","",""
+     ,"","","","","","","",""
+    } 
   };
   unsigned int i,j,mask;
   const extend_info_t *p=out;
@@ -530,8 +542,8 @@ void cpuid_print_extend_info( const extend_info_t* out )
       printf("\n");
       printf("Extended Processor Signature       : %02xH\n",p->ex_proc_sign);
 
-      printf("Extended Features                  : ");
-      for( j=0; j<3 ; j++ ){
+      printf("Extended Processor Information     : ");
+      for( j=0; j<4 ; j++ ){
         mask=0x01;
         for( i=0; i<32; i++ ){
           if( p->features[j] & mask ){
