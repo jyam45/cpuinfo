@@ -8,7 +8,7 @@ cpuinfo : cpuinfo.o cpuid.o
 	$(CC) $(LDFLAGS) -o $@ $?
 
 make_cpu_header : make_cpu_header.o cpuid.o
-	$(CC) $(LDFAGS) -o $@ $?
+	$(CC) $(LDFLAGS) -o $@ $?
 
 cpuinfo.txt :
 	./cpuinfo > $@
