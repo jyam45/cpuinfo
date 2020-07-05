@@ -19,34 +19,39 @@ int main( int argc, char* argv )
   printf("/**********************************/\n");
   printf("/** Instruction Set Architecture **/\n");
   printf("/**********************************/\n");
-  printf("#define HAVE_F16C              %u\n",((cpu.basic_info.features[0]&F_F16C)?1:0));
-  printf("#define HAVE_FPU               %u\n",((cpu.basic_info.features[1]&F_FPU)?1:0));
-  printf("#define HAVE_MMX               %u\n",((cpu.basic_info.features[1]&F_MMX)?1:0));
-  printf("#define HAVE_FPU               %u\n",((cpu.basic_info.features[1]&F_FPU)?1:0));
-  printf("#define HAVE_MMX               %u\n",((cpu.basic_info.features[1]&F_MMX)?1:0));
-  printf("#define HAVE_SSE               %u\n",((cpu.basic_info.features[1]&F_SSE)?1:0));
-  printf("#define HAVE_SSE2              %u\n",((cpu.basic_info.features[1]&F_SSE2)?1:0));
-  printf("#define HAVE_SSE3              %u\n",((cpu.basic_info.features[0]&F_SSE3)?1:0));
-  printf("#define HAVE_SSSE3             %u\n",((cpu.basic_info.features[0]&F_SSSE3)?1:0));
-  printf("#define HAVE_SSE4_1            %u\n",((cpu.basic_info.features[0]&F_SSE4_1)?1:0));
-  printf("#define HAVE_SSE4_2            %u\n",((cpu.basic_info.features[0]&F_SSE4_2)?1:0));
-  printf("#define HAVE_AVX               %u\n",((cpu.basic_info.features[0]&F_AVX)?1:0));
-  printf("#define HAVE_AVX2              %u\n",((cpu.more_feature[0].features[0]&F_AVX2)?1:0));
-  printf("#define HAVE_AVX512F           %u\n",((cpu.more_feature[0].features[0]&F_AVX512F)?1:0));
-  printf("#define HAVE_AVX512DQ          %u\n",((cpu.more_feature[0].features[0]&F_AVX512DQ)?1:0));
-  printf("#define HAVE_AVX512PF          %u\n",((cpu.more_feature[0].features[0]&F_AVX512PF)?1:0));
-  printf("#define HAVE_AVX512ER          %u\n",((cpu.more_feature[0].features[0]&F_AVX512ER)?1:0));
-  printf("#define HAVE_AVX512CD          %u\n",((cpu.more_feature[0].features[0]&F_AVX512CD)?1:0));
-  printf("#define HAVE_AVX512BW          %u\n",((cpu.more_feature[0].features[0]&F_AVX512BW)?1:0));
-  printf("#define HAVE_AVX512VL          %u\n",((cpu.more_feature[0].features[0]&F_AVX512VL)?1:0));
-  printf("#define HAVE_AVX512_IFMA       %u\n",((cpu.more_feature[0].features[0]&F_AVX512_IFMA)?1:0));
-  printf("#define HAVE_AVX512_VBMI       %u\n",((cpu.more_feature[0].features[1]&F_AVX512_VBMI)?1:0));
-  printf("#define HAVE_AVX512_VBMI2      %u\n",((cpu.more_feature[0].features[1]&F_AVX512_VBMI2)?1:0));
-  printf("#define HAVE_AVX512_VNNI       %u\n",((cpu.more_feature[0].features[1]&F_AVX512_VNNI)?1:0));
-  printf("#define HAVE_AVX512_BITALG     %u\n",((cpu.more_feature[0].features[1]&F_AVX512_BITALG)?1:0));
-  printf("#define HAVE_AVX512_4VNNIW     %u\n",((cpu.more_feature[0].features[1]&F_AVX512_4VNNIW)?1:0));
-  printf("#define HAVE_AVX512_4FMDPS     %u\n",((cpu.more_feature[0].features[1]&F_AVX512_4FMDPS)?1:0));
-  printf("#define HAVE_AVX512_VPOPCNTDQ  %u\n",((cpu.more_feature[0].features[1]&F_AVX512_VPOPCNTDQ)?1:0));
+  printf("#define HAVE_F16C                %u\n",((cpu.basic_info.features[0]&F_F16C)?1:0));
+  printf("#define HAVE_FPU                 %u\n",((cpu.basic_info.features[1]&F_FPU)?1:0));
+  printf("#define HAVE_MMX                 %u\n",((cpu.basic_info.features[1]&F_MMX)?1:0));
+  printf("#define HAVE_FPU                 %u\n",((cpu.basic_info.features[1]&F_FPU)?1:0));
+  printf("#define HAVE_MMX                 %u\n",((cpu.basic_info.features[1]&F_MMX)?1:0));
+  printf("#define HAVE_SSE                 %u\n",((cpu.basic_info.features[1]&F_SSE)?1:0));
+  printf("#define HAVE_SSE2                %u\n",((cpu.basic_info.features[1]&F_SSE2)?1:0));
+  printf("#define HAVE_SSE3                %u\n",((cpu.basic_info.features[0]&F_SSE3)?1:0));
+  printf("#define HAVE_SSSE3               %u\n",((cpu.basic_info.features[0]&F_SSSE3)?1:0));
+  printf("#define HAVE_SSE4_1              %u\n",((cpu.basic_info.features[0]&F_SSE4_1)?1:0));
+  printf("#define HAVE_SSE4_2              %u\n",((cpu.basic_info.features[0]&F_SSE4_2)?1:0));
+  printf("#define HAVE_AVX                 %u\n",((cpu.basic_info.features[0]&F_AVX)?1:0));
+  printf("#define HAVE_AVX2                %u\n",((cpu.more_feature[0].features[1]&F_AVX2)?1:0));
+  printf("#define HAVE_AVX512F             %u\n",((cpu.more_feature[0].features[1]&F_AVX512F)?1:0));
+  printf("#define HAVE_AVX512DQ            %u\n",((cpu.more_feature[0].features[1]&F_AVX512DQ)?1:0));
+  printf("#define HAVE_AVX512PF            %u\n",((cpu.more_feature[0].features[1]&F_AVX512PF)?1:0));
+  printf("#define HAVE_AVX512ER            %u\n",((cpu.more_feature[0].features[1]&F_AVX512ER)?1:0));
+  printf("#define HAVE_AVX512CD            %u\n",((cpu.more_feature[0].features[1]&F_AVX512CD)?1:0));
+  printf("#define HAVE_AVX512BW            %u\n",((cpu.more_feature[0].features[1]&F_AVX512BW)?1:0));
+  printf("#define HAVE_AVX512VL            %u\n",((cpu.more_feature[0].features[1]&F_AVX512VL)?1:0));
+  printf("#define HAVE_AVX512_IFMA         %u\n",((cpu.more_feature[0].features[1]&F_AVX512_IFMA)?1:0));
+  printf("#define HAVE_AVX512_VBMI         %u\n",((cpu.more_feature[0].features[2]&F_AVX512_VBMI)?1:0));
+  printf("#define HAVE_AVX512_VBMI2        %u\n",((cpu.more_feature[0].features[2]&F_AVX512_VBMI2)?1:0));
+  printf("#define HAVE_AVX512_VNNI         %u\n",((cpu.more_feature[0].features[2]&F_AVX512_VNNI)?1:0));
+  printf("#define HAVE_AVX512_BITALG       %u\n",((cpu.more_feature[0].features[2]&F_AVX512_BITALG)?1:0));
+  printf("#define HAVE_AVX512_4VNNIW       %u\n",((cpu.more_feature[0].features[3]&F_AVX512_4VNNIW)?1:0));
+  printf("#define HAVE_AVX512_4FMDPS       %u\n",((cpu.more_feature[0].features[3]&F_AVX512_4FMDPS)?1:0));
+  printf("#define HAVE_AVX512_VPOPCNTDQ    %u\n",((cpu.more_feature[0].features[2]&F_AVX512_VPOPCNTDQ)?1:0));
+  printf("#define HAVE_AVX512_VP2INTERSECT %u\n",((cpu.more_feature[0].features[3]&F_AVX512_VP2INTERSECT)?1:0));
+  printf("#define HAVE_AVX512_BF16         %u\n",((cpu.more_feature[1].features[0]&F_AVX512_BF16)?1:0));
+  printf("#define HAVE_AMX_BF16            %u\n",((cpu.more_feature[0].features[3]&F_AMX_BF16)?1:0));
+  printf("#define HAVE_AMX_TILE            %u\n",((cpu.more_feature[0].features[3]&F_AMX_TILE)?1:0));
+  printf("#define HAVE_AMX_INT8            %u\n",((cpu.more_feature[0].features[3]&F_AMX_INT8)?1:0));
 
 
   printf("/**********************************/\n");
@@ -83,7 +88,7 @@ int main( int argc, char* argv )
   printf("#define HAVE_SYSRET            %u\n",((cpu.extend_info.features[1]&F_X_SYSCALL)?1:0));
   printf("#define HAVE_RDTSCP            %u\n",((cpu.extend_info.features[1]&F_X_RDTSCP)?1:0));
 
-  printf("#define HAVE_VPCLMULQDQ        %u\n",((cpu.more_feature[0].features[1]&F_VPCLMULQDQ)?1:0));
+  printf("#define HAVE_VPCLMULQDQ        %u\n",((cpu.more_feature[0].features[2]&F_VPCLMULQDQ)?1:0));
 
   printf("/**********************************/\n");
   printf("/**      System Configuration    **/\n");
@@ -107,6 +112,25 @@ int main( int argc, char* argv )
     printf("#define %s_ASSOC_SETS         %u\n",head,((cpu.cache_info[i].assoc_sets)));
   }
   
+  // Palettes
+  if( cpu.max_palette>0 ){
+    printf("/**********************************/\n");
+    printf("/**  Tile Palette Configuration  **/\n");
+    printf("/**********************************/\n");
+    printf("#define HAVE_PALETTES          %u\n",(cpu.max_palette>0)?1:0);
+    printf("#define TMUL_MAX_K             %u\n",cpu.tmul_info.tmul_maxk);
+    printf("#define TMUL_MAX_N             %u\n",cpu.tmul_info.tmul_maxn);
+  }
+  for( i=0; i<cpu.max_palette; i++ ){
+    sprintf(head,"P%01u\0",i);
+    printf("#define %s_TOTAL_TILE_BYTES   %u\n",head,cpu.tile_info[i].total_tile_bytes);
+    printf("#define %s_BYTES_PER_TILE     %u\n",head,cpu.tile_info[i].bytes_per_tile  );
+    printf("#define %s_BYTES_PER_ROW      %u\n",head,cpu.tile_info[i].bytes_per_row   );
+    printf("#define %s_NUM_TILE_REGS      %u\n",head,cpu.tile_info[i].max_names       );
+    printf("#define %s_MAX_ROWS           %u\n",head,cpu.tile_info[i].max_rows        );
+  }
+ 
+
   printf("/**********************************/\n");
   printf("#endif//CPU_H_HEADER_GUIRD\n");
   return (0);

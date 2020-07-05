@@ -6,6 +6,7 @@
 #define MAX_CACHES 5
 #define MAX_FTLEVEL 5
 #define MAX_TPLEVEL 5
+#define MAX_PLLEVEL 5
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +71,7 @@ typedef struct _cache_param_t {
 
 // 07H
 typedef struct _extend_feature_t {
-	unsigned int  features[3];
+	unsigned int  features[4];
 	} extend_feature_t;
 
 // 0BH
@@ -81,6 +82,21 @@ typedef struct _extend_topology_t {
 	unsigned int  level_type;
 	unsigned int  apic_id;
 	} extend_topology_t;
+
+// 1DH
+typedef struct _tile_info_t {
+	unsigned int  total_tile_bytes;
+	unsigned int  bytes_per_tile;
+	unsigned int  bytes_per_row;
+	unsigned int  max_names;//num of tile regs
+	unsigned int  max_rows;
+	} tile_info_t;
+
+// 1EH
+typedef struct _tmul_info_t {
+	unsigned int  tmul_maxk;
+	unsigned int  tmul_maxn;
+	} tmul_info_t;
 
 // 80000000H-80000008H
 typedef struct _extend_info_t {
@@ -103,9 +119,12 @@ typedef struct _cpuid_info_t {
 	cache_param_t     cache_info[MAX_CACHES];
         extend_feature_t  more_feature[MAX_FTLEVEL];
         extend_topology_t topology[MAX_FTLEVEL];
+	tile_info_t       tile_info[MAX_PLLEVEL];
+	tmul_info_t       tmul_info;
 	size_t            num_caches;
 	size_t            num_ftlevel;
 	size_t            num_tplevel;
+	size_t            max_palette;
 	} cpuid_info_t;
 
 
@@ -182,7 +201,8 @@ enum Features2 {
         ,F_PBE             = 0x80000000 // 31
 };
 
-// more_feature[0].features[0]
+// 07H Leaf=0 EBX
+// more_feature[0].features[1]
 enum Features3 {
          F_FSGSBASE        = 0x00000001 // 00
         ,F_IA32TSC         = 0x00000002 // 01
@@ -218,7 +238,8 @@ enum Features3 {
         ,F_AVX512VL        = 0x80000000 // 31
 };
 
-// more_feature[0].features[1]
+// 07H Leaf=0 ECX
+// more_feature[0].features[2]
 enum Features4 {
          F_PREFETCHWT1     = 0x00000001 // 00
         ,F_AVX512_VBMI     = 0x00000002 // 01
@@ -249,46 +270,85 @@ enum Features4 {
       //,F_RESERVED        = 0x04000000 // 26
         ,F_MOVDIRI         = 0x08000000 // 27
         ,F_MOVDIR64B       = 0x10000000 // 28
-      //,F_RESERVED        = 0x20000000 // 29
+        ,F_ENQCMD          = 0x20000000 // 29
         ,F_SGX_LC          = 0x40000000 // 30
-      //,F_RESERVED        = 0x80000000 // 31
+        ,F_PKS             = 0x80000000 // 31
 };
 
-// more_feature[0].features[2]
+// 07H Leaf=0 EDX
+// more_feature[0].features[3]
 enum Features5 {
-      // F_RESERVED        = 0x00000001 // 00
-      //,F_RESERVED        = 0x00000002 // 01
-         F_AVX512_4VNNIW   = 0x00000004 // 02
-        ,F_AVX512_4FMDPS   = 0x00000008 // 03
-        ,F_FASTSHORTREPMOV = 0x00000010 // 04
-      //,F_RESERVED        = 0x00000020 // 05
-      //,F_RESERVED        = 0x00000040 // 06
-      //,F_RESERVED        = 0x00000080 // 07
-      //,F_RESERVED        = 0x00000100 // 08
-      //,F_RESERVED        = 0x00000200 // 09
-      //,F_RESERVED        = 0x00000400 // 10
-      //,F_RESERVED        = 0x00000800 // 11
-      //,F_RESERVED        = 0x00001000 // 12
-      //,F_RESERVED        = 0x00002000 // 13
-      //,F_RESERVED        = 0x00004000 // 14
-      //,F_RESERVED        = 0x00008000 // 15
-      //,F_RESERVED        = 0x00010000 // 16
-      //,F_RESERVED        = 0x00020000 // 17
-        ,F_PCONFIG         = 0x00040000 // 18
-      //,F_RESERVED        = 0x00080000 // 19
-      //,F_RESERVED        = 0x00100000 // 20
-      //,F_RESERVED        = 0x00200000 // 21
-      //,F_RESERVED        = 0x00400000 // 22
-      //,F_RESERVED        = 0x00800000 // 23
-      //,F_RESERVED        = 0x01000000 // 24
-      //,F_RESERVED        = 0x02000000 // 25
-        ,F_IPRS_IBPB       = 0x04000000 // 26
-        ,F_STIBP           = 0x08000000 // 27
-      //,F_RESERVED        = 0x10000000 // 28
-        ,F_IA32_MSR        = 0x20000000 // 29
-      //,F_RESERVED        = 0x40000000 // 30
-        ,F_SSBD            = 0x80000000 // 31
+      // F_RESERVED            = 0x00000001 // 00
+      //,F_RESERVED            = 0x00000002 // 01
+         F_AVX512_4VNNIW       = 0x00000004 // 02
+        ,F_AVX512_4FMDPS       = 0x00000008 // 03
+        ,F_FASTSHORTREPMOV     = 0x00000010 // 04
+      //,F_RESERVED            = 0x00000020 // 05
+      //,F_RESERVED            = 0x00000040 // 06
+      //,F_RESERVED            = 0x00000080 // 07
+        ,F_AVX512_VP2INTERSECT = 0x00000100 // 08
+      //,F_RESERVED            = 0x00000200 // 09
+        ,F_MD_CLEAR            = 0x00000400 // 10
+      //,F_RESERVED            = 0x00000800 // 11
+      //,F_RESERVED            = 0x00001000 // 12
+      //,F_RESERVED            = 0x00002000 // 13
+        ,F_SERIALIZE           = 0x00004000 // 14
+        ,F_HYBLID              = 0x00008000 // 15
+        ,F_TSXLDTRK            = 0x00010000 // 16
+      //,F_RESERVED            = 0x00020000 // 17
+        ,F_PCONFIG             = 0x00040000 // 18
+      //,F_RESERVED            = 0x00080000 // 19
+      //,F_RESERVED            = 0x00100000 // 20
+      //,F_RESERVED            = 0x00200000 // 21
+        ,F_AMX_BF16            = 0x00400000 // 22
+      //,F_RESERVED            = 0x00800000 // 23
+        ,F_AMX_TILE            = 0x01000000 // 24
+        ,F_AMX_INT8            = 0x02000000 // 25
+        ,F_IPRS_IBPB           = 0x04000000 // 26
+        ,F_STIBP               = 0x08000000 // 27
+      //,F_RESERVED            = 0x10000000 // 28
+        ,F_ENUM_IA32_ARCH      = 0x20000000 // 29
+        ,F_ENUM_IA32_CORE      = 0x40000000 // 30
+        ,F_ENUM_SSDB           = 0x80000000 // 31
 };
+
+// 07H Leaf=1 EAX
+// more_feature[1].features[0]
+enum Features6 {
+      //,F_RESERVED            = 0x00000001 // 00
+      //,F_RESERVED            = 0x00000002 // 01
+      //,F_RESERVED            = 0x00000004 // 02
+      //,F_RESERVED            = 0x00000008 // 03
+      //,F_RESERVED            = 0x00000010 // 04
+         F_AVX512_BF16         = 0x00000020 // 05
+      //,F_RESERVED            = 0x00000040 // 06
+      //,F_RESERVED            = 0x00000080 // 07
+      //,F_RESERVED            = 0x00000100 // 08
+      //,F_RESERVED            = 0x00000200 // 09
+      //,F_RESERVED            = 0x00000400 // 10
+      //,F_RESERVED            = 0x00000800 // 11
+      //,F_RESERVED            = 0x00001000 // 12
+      //,F_RESERVED            = 0x00002000 // 13
+      //,F_RESERVED            = 0x00004000 // 14
+      //,F_RESERVED            = 0x00008000 // 15
+      //,F_RESERVED            = 0x00010000 // 16
+      //,F_RESERVED            = 0x00020000 // 17
+      //,F_RESERVED            = 0x00040000 // 18
+      //,F_RESERVED            = 0x00080000 // 19
+      //,F_RESERVED            = 0x00100000 // 20
+      //,F_RESERVED            = 0x00200000 // 21
+      //,F_RESERVED            = 0x00400000 // 22
+      //,F_RESERVED            = 0x00800000 // 23
+      //,F_RESERVED            = 0x01000000 // 24
+      //,F_RESERVED            = 0x02000000 // 25
+      //,F_RESERVED            = 0x04000000 // 26
+      //,F_RESERVED            = 0x08000000 // 27
+      //,F_RESERVED            = 0x10000000 // 28
+      //,F_RESERVED            = 0x20000000 // 29
+      //,F_RESERVED            = 0x40000000 // 30
+      //,F_RESERVED            = 0x80000000 // 31
+};
+
 
 
 enum CacheParam{
@@ -297,6 +357,7 @@ enum CacheParam{
         ,F_CP_CMPLXIDX     = 0x00000004
 };
 
+//80000001H ECX
 enum ExFeatures1 {
          F_X_LAHF          = 0x00000001 // 00
       //,F_X_RESERVED      = 0x00000002 // 01
@@ -332,6 +393,7 @@ enum ExFeatures1 {
       //,F_X_RESERVED      = 0x80000000 // 31
 };
 
+//80000001H EDX
 enum ExFeatures2 {
       // F_X_RESERVED      = 0x00000001 // 00
       //,F_X_RESERVED      = 0x00000002 // 01
@@ -367,6 +429,7 @@ enum ExFeatures2 {
       //,F_X_RESERVED      = 0x80000000 // 31
 };
 
+//80000007H EDX
 enum ExFeatures3 {
       // F_X_RESERVED      = 0x00000001 // 00
       //,F_X_RESERVED      = 0x00000002 // 01
@@ -402,6 +465,7 @@ enum ExFeatures3 {
       //,F_X_RESERVED      = 0x80000000 // 31
 };
 
+//80000008H EBX
 enum ExFeatures4 {
       // F_X_RESERVED      = 0x00000001 // 00
       //,F_X_RESERVED      = 0x00000002 // 01

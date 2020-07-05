@@ -13,6 +13,10 @@ static size_t cpuid_extend_features( size_t n, extend_feature_t* out );
 static void   cpuid_print_extend_features( size_t n, const extend_feature_t* out );
 static size_t cpuid_extend_topology( size_t n, extend_topology_t* out );
 static void   cpuid_print_extend_topology( size_t n, const extend_topology_t* out );
+static size_t cpuid_tile_palettes( size_t max_pllevel, tile_info_t* out );
+static void   cpuid_print_tile_palettes( size_t max_palette, const tile_info_t* out );
+static void   cpuid_tmul_info( tmul_info_t* out );
+static void   cpuid_print_tmul_info( const tmul_info_t* out );
 
 void cpuid( int eax, int ecx, cpuid_t *reg )
 {
@@ -143,9 +147,10 @@ size_t cpuid_extend_features( size_t n, extend_feature_t* out )
     // 07H
     cpuid(0x7,i,&reg);
     if( (reg.eax|reg.ebx|reg.ecx|reg.edx) != 0 ) {
-      p->features[0] = reg.ebx;
-      p->features[1] = reg.ecx;
-      p->features[2] = reg.edx;
+      p->features[0] = reg.eax;
+      p->features[1] = reg.ebx;
+      p->features[2] = reg.ecx;
+      p->features[3] = reg.edx;
       retval = i+1;
     }else{
       break;
@@ -179,6 +184,49 @@ size_t cpuid_extend_topology( size_t n, extend_topology_t* out )
   return retval;
 }
 
+// 1DH
+size_t cpuid_tile_palettes( size_t max_pllevel, tile_info_t* out )
+{
+  cpuid_t reg={0};
+  size_t i=0;
+  size_t n=0;
+  size_t max_palette=0;
+  size_t retval=0;
+  tile_info_t* p=out;
+
+  // max_palette
+  cpuid(0x1d,0,&reg);
+  max_palette = reg.eax;
+
+  printf("max_palette = %z\n",max_palette);
+
+  if( max_pllevel < max_palette ) return 0; // ERROR
+
+  // palettes
+  n = max_palette + 1;
+  for( i=1, p=out; i<n; i++,p++ ){
+    cpuid(0x1d,i,&reg);
+    p->total_tile_bytes = ((reg.eax    )&0xffff) ; // 16 bits
+    p->bytes_per_tile   = ((reg.eax>>16)&0xffff) ; // 16 bits
+    p->bytes_per_row    = ((reg.ebx    )&0xffff) ; // 16 bits
+    p->max_names        = ((reg.ebx>>16)&0xffff) ; // 16 bits
+    p->max_rows         = ((reg.ecx    )&0xffff) ; // 16 bits
+  }
+  return max_palette;
+}
+
+// 1EH
+void cpuid_tmul_info( tmul_info_t* out )
+{
+  cpuid_t reg={0};
+
+  cpuid(0x1e,0,&reg);
+  out->tmul_maxk = ((reg.ebx    )&0x00ff) ; //  8 bits
+  out->tmul_maxn = ((reg.ebx>>8 )&0xffff) ; // 16 bits
+}
+
+
+//80000000H
 void cpuid_extend_info( extend_info_t* out )
 {
   cpuid_t reg={0};
@@ -425,6 +473,7 @@ void cpuid_print_cache_params( size_t n, const cache_param_t* out )
   }
 }
 
+// 07H
 void cpuid_print_extend_features( size_t n, const extend_feature_t* out )
 {
   const extend_feature_t* p=out;
@@ -439,33 +488,46 @@ void cpuid_print_extend_features( size_t n, const extend_feature_t* out )
       "prefetchwt1","avx512_vbmi","umip","pku","ospke","waitpkg","avx512_vbmi2",""
      ,"gfni","vaes","vpclmulqdq","avx512_vnni","avx512_bitalg","","avx512_vpopcntdq",""
      ,"","","","","","","rdpid",""
-     ,"","cldemote","","movdiri","movdir64b","","sgx_lc",""
+     ,"","cldemote","","movdiri","movdir64b","enqcmd","sgx_lc","pks"
   };
   const char* item_lv1d[32]={
       "","","avx512_4vnniw","avx512_4fmaps","fast_short_rep_mov","","",""
-     ,"","","","","","","",""
-     ,"","","pconfig","","","","",""
-     ,"","","iprs/ibpb","stibp","","ia32_msr","","ssbd"
+     ,"avx512_vp2intersect","","md_clear","","","","serialize","hybrid"
+     ,"tsxldtrk","","pconfig","","","","amx-bf16",""
+     ,"amx-tile","amx-int8","iprs/ibpb","stibp","","enum_ia32_arch","enum_ia32_core","enum_ssbd"
   };
 
-  const char** features[MAX_FTLEVEL][3];
-  size_t i,j,k;
+  const char* item_lv2a[32]={
+      "","","","","","avx512-bf16","",""
+     ,"","","","","","","",""
+     ,"","","","","","","",""
+     ,"","","","","","","",""
+  };
+
+  const char** features[MAX_FTLEVEL][4];
+  size_t i,j,k,j0;
   unsigned int mask;
 
-  features[0][0]=item_lv1b;
-  features[0][1]=item_lv1c;
-  features[0][2]=item_lv1d;
- 
-  for( k=1; k<MAX_FTLEVEL; k++ ){
+  size_t max_subleaves = out->features[0];
+
+  for( k=0; k<MAX_FTLEVEL; k++ ){
     features[k][0]=item_null;
     features[k][1]=item_null;
     features[k][2]=item_null;
+    features[k][3]=item_null;
   } 
+
+  features[0][1]=item_lv1b;
+  features[0][2]=item_lv1c;
+  features[0][3]=item_lv1d;
+
+  features[1][0]=item_lv2a;
 
   printf("\n");
   for( k=0,p=out; k<n; k++,p++ ){ 
     printf("Extended Features                  : ");
-    for( j=0; j<3 ; j++ ){
+    j0=(k==0?1:0);
+    for( j=j0; j<4 ; j++ ){
       mask=0x01;
       for( i=0; i<32; i++ ){
         if( p->features[j] & mask ){
@@ -502,7 +564,35 @@ void cpuid_print_extend_topology( size_t n, const extend_topology_t* out )
   }
 
 }
- 
+
+// 1DH
+void cpuid_print_tile_palettes( size_t max_palette, const tile_info_t* out )
+{
+  const tile_info_t* p=out;
+  size_t k;
+
+  for( k=0,p=out; k<max_palette; k++,p++ ){ 
+    printf("\n");
+    printf("Palette No.                        : %u\n",k);
+    printf("Total tile bytes                   : %u\n",p->total_tile_bytes);
+    printf("Bytes per tile                     : %u\n",p->bytes_per_tile  );
+    printf("Bytes per row                      : %u\n",p->bytes_per_row   );
+    printf("Number of tile registers           : %u\n",p->max_names       );
+    printf("Max rows                           : %u\n",p->max_rows        );
+  }
+
+}
+
+// 1EH
+void cpuid_print_tmul_info( const tmul_info_t* out )
+{
+  printf("Max K in Tile Multiply (TMUL)      : %u\n",out->tmul_maxk);
+  printf("Max N in Tile Multiply (TMUL)      : %u\n",out->tmul_maxn);
+}
+
+
+
+// 80000000H
 void cpuid_print_extend_info( const extend_info_t* out )
 {
   const char* features[4][32]=
@@ -596,18 +686,38 @@ void read_cpuid_info( cpuid_info_t* out )
   if( out->basic_info.max_support >= 0x04 ){
     out->num_caches = 
      cpuid_cache_params(MAX_CACHES,out->cache_info);
+  }else{
+    out->num_caches = 0;
   }
+
   // 07H
   if( out->basic_info.max_support >= 0x07 ){
     out->num_ftlevel = 
      cpuid_extend_features(MAX_FTLEVEL,out->more_feature);
+  }else{
+    out->num_ftlevel = 0;
   }
+
   // 0BH
   if( out->basic_info.max_support >= 0x0B ){
     out->num_tplevel = 
      cpuid_extend_topology(MAX_TPLEVEL,out->topology);
+  }else{
+    out->num_tplevel = 0;
   }
 
+  // 1DH
+  if( out->basic_info.max_support >= 0x1D ){
+    out->max_palette = 
+     cpuid_tile_palettes(MAX_PLLEVEL,out->tile_info);
+  }else{
+    out->max_palette = 0;
+  }
+
+  // 1EH
+  if( out->basic_info.max_support >= 0x1E ){
+     cpuid_tmul_info(&(out->tmul_info));
+  } 
 
 }
 
@@ -627,6 +737,14 @@ void write_cpuid_info( const cpuid_info_t* out )
   // 04H
   if( out->basic_info.max_support >= 0x04 ){
     cpuid_print_cache_params(out->num_caches,out->cache_info);
+  }
+  // 1EH
+  if( out->basic_info.max_support >= 0x1E ){
+     cpuid_print_tmul_info(&(out->tmul_info));
+  } 
+  // 1DH
+  if( out->basic_info.max_support >= 0x1D ){
+     cpuid_print_tile_palettes(out->max_palette,out->tile_info);
   }
 }
 
