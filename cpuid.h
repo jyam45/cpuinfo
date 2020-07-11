@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #define MAX_CACHES 5
+#define MAX_TLBS   5
 #define MAX_FTLEVEL 5
 #define MAX_TPLEVEL 5
 #define MAX_PLLEVEL 5
@@ -90,6 +91,21 @@ typedef struct _proc_freq_info_t {
 	unsigned int  bus_freq;
 	} proc_freq_info_t;
 
+// 18H
+typedef struct _tlb_param_t {
+	// ebx
+	unsigned int  page_size_flags;
+	unsigned int  partitioning;
+	unsigned int  assoc_ways;
+	// ecx
+	unsigned int  assoc_sets;
+	// edx
+	unsigned int  tlb_type;
+	unsigned int  tlb_level;
+	unsigned int  assoc_fully;;
+	unsigned int  max_addr_procs;
+	} tlb_param_t;
+
 // 1DH
 typedef struct _tile_info_t {
 	unsigned int  total_tile_bytes;
@@ -124,12 +140,14 @@ typedef struct _cpuid_info_t {
 	basic_info_t      basic_info;
 	extend_info_t     extend_info;
 	cache_param_t     cache_info[MAX_CACHES];
+	tlb_param_t       tlb_info[MAX_TLBS];
         extend_feature_t  more_feature[MAX_FTLEVEL];
         extend_topology_t topology[MAX_FTLEVEL];
 	tile_info_t       tile_info[MAX_PLLEVEL];
 	tmul_info_t       tmul_info;
 	proc_freq_info_t  proc_freq_info;
 	size_t            num_caches;
+	size_t            num_tlbs;
 	size_t            num_ftlevel;
 	size_t            num_tplevel;
 	size_t            max_palette;

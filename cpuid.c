@@ -19,6 +19,8 @@ static void   cpuid_tmul_info( tmul_info_t* out );
 static void   cpuid_print_tmul_info( const tmul_info_t* out );
 static void   cpuid_proc_freq_info( proc_freq_info_t* out );
 static void   cpuid_print_proc_freq_info( const proc_freq_info_t* out );
+static size_t cpuid_tlb_params( size_t max_tlbs, tlb_param_t* out );
+static void   cpuid_print_tlb_params( size_t n, const tlb_param_t* out );
 
 void cpuid( int eax, int ecx, cpuid_t *reg )
 {
@@ -196,6 +198,43 @@ void   cpuid_proc_freq_info( proc_freq_info_t* out )
   out->bus_freq       = ((reg.ecx)&0xffff);
 }
 
+// 18H
+size_t cpuid_tlb_params( size_t max_tlbs, tlb_param_t* out )
+{
+  cpuid_t reg={0};
+  size_t i=0;
+  size_t n=0;
+  size_t retval=0;
+  tlb_param_t* p=out;
+
+  cpuid(0x18,0,&reg);
+  n = reg.eax+1; /// num of leaves
+  if( n > max_tlbs ){ fprintf(stderr,"[ERROR] MAX_TLBS is less than size of leaves in cpuid_tlb_params(18H)\n"); return 0; }
+
+  for( i=0, p=out; i<n; i++, p++ ){
+    if( reg.eax|reg.ebx|reg.ecx|reg.edx != 0 ){
+      // ebx
+      p->page_size_flags  = ((reg.ebx    )&0x00ff); // 8 bits
+      p->partitioning     = ((reg.ebx>> 8)&0x0008); // 3 bits 
+      p->assoc_ways       = ((reg.ebx>>16)&0xffff); //16 bits 
+      // ecx
+      p->assoc_sets       = ((reg.ecx    )       ); //32 bits
+      // edx
+      p->tlb_type         = ((reg.edx    )&0x001f); // 5 bits 
+      p->tlb_level        = ((reg.edx>> 5)&0x0008); // 3 bits 
+      p->assoc_fully      = ((reg.edx>> 8)&0x0001); // 1 bits 
+      p->max_addr_procs   = ((reg.edx>>14)&0x0fff); //12 bits
+      retval++;
+      // next
+      cpuid(0x18,i+1,&reg);
+    }else{
+      break;
+    }
+  }
+
+  return retval;
+}
+
 // 1DH
 size_t cpuid_tile_palettes( size_t max_pllevel, tile_info_t* out )
 {
@@ -210,9 +249,9 @@ size_t cpuid_tile_palettes( size_t max_pllevel, tile_info_t* out )
   cpuid(0x1d,0,&reg);
   max_palette = reg.eax;
 
-  printf("max_palette = %z\n",max_palette);
+  //printf("max_palette = %z\n",max_palette);
 
-  if( max_pllevel < max_palette ) return 0; // ERROR
+  if( max_pllevel <= max_palette ){ fprintf(stderr,"[ERROR] MAX_PLLEVEL is less than size of subleaf in cpuid_tile_palettes 1DH\n");  return 0; }// ERROR
 
   // palettes
   n = max_palette + 1;
@@ -578,11 +617,46 @@ void cpuid_print_extend_topology( size_t n, const extend_topology_t* out )
 }
 
 // 16H
-void   cpuid_print_proc_freq_info( const proc_freq_info_t* out )
+void cpuid_print_proc_freq_info( const proc_freq_info_t* out )
 {
+  printf("\n");
   printf("Processor Base Frequency (MHz)     : %u\n",out->proc_base_freq);
   printf("Maximum Frequency (MHz)            : %u\n",out->max_freq);
   printf("Bus (Reference) Frequency (MHz)    : %u\n",out->bus_freq);
+}
+
+// 18H
+void cpuid_print_tlb_params( size_t n, const tlb_param_t* out )
+{
+  const char* yesno_str[2]={"No","Yes"};
+  const char* tlb_type_str[6]={"Null","Data TLB","Instruction TLB","Unified TLB","Load Only TLB","Store Only TLB"};
+  const char* page_size_str[4]={
+     "4K page size entries supported by this structure."
+    ,"2MB page size entries supported by this structure."
+    ,"4MB page size entries supported by this structure."
+    ,"1 GB page size entries supported by this structure."
+  };
+  size_t i=0;
+  size_t j=0;
+  const tlb_param_t* p;
+
+  for( i=0, p=out; i<n; i++,p++ ){ 
+    printf("\n");
+    printf("TLB No.                            : %u\n",i);
+    printf("Translation Cache Type             : %s\n",tlb_type_str[p->tlb_type]);
+    printf("Translation Cache Level            : %u\n",p->tlb_level);
+    printf("Fully Aassociative                 : %s\n",yesno_str[p->assoc_fully]);
+    printf("Max Shared Logical Processors      : %u\n",p->max_addr_procs);
+    printf("Partitioning (0=soft partition)    : %u\n",p->partitioning);
+    printf("Ways of associativity              : %u\n",p->assoc_ways);
+    printf("Number of Sets                     : %u\n",p->assoc_sets);
+    for( j=0; j<4 ; j++ ){
+      if( ((p->page_size_flags)>>j)&0x1 ){
+        printf("Supported Page size                : %s\n",page_size_str[j]);
+      }
+    }
+  }
+
 }
 
 
@@ -703,6 +777,8 @@ void read_cpuid_info( cpuid_info_t* out )
   cpuid_basic_info(&(out->basic_info));
   cpuid_extend_info(&(out->extend_info));
 
+  printf("max support : 0x%x\n",out->basic_info.max_support);
+
   // 04H
   if( out->basic_info.max_support >= 0x04 ){
     out->num_caches = 
@@ -730,6 +806,14 @@ void read_cpuid_info( cpuid_info_t* out )
   // 16H
   if( out->basic_info.max_support >= 0x16 ){
      cpuid_proc_freq_info(&(out->proc_freq_info));
+  } 
+
+  // 18H
+  if( out->basic_info.max_support >= 0x18 ){
+    out->num_tlbs =
+     cpuid_tlb_params(MAX_TLBS,out->tlb_info);
+  }else{
+    out->num_tlbs = 0;
   } 
 
   // 1DH
@@ -767,6 +851,10 @@ void write_cpuid_info( const cpuid_info_t* out )
   // 04H
   if( out->basic_info.max_support >= 0x04 ){
     cpuid_print_cache_params(out->num_caches,out->cache_info);
+  }
+  // 18H
+  if( out->basic_info.max_support >= 0x18 ){
+    cpuid_print_tlb_params(out->num_tlbs,out->tlb_info);
   }
   // 1EH
   if( out->basic_info.max_support >= 0x1E ){
