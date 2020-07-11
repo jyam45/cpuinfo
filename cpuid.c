@@ -17,6 +17,8 @@ static size_t cpuid_tile_palettes( size_t max_pllevel, tile_info_t* out );
 static void   cpuid_print_tile_palettes( size_t max_palette, const tile_info_t* out );
 static void   cpuid_tmul_info( tmul_info_t* out );
 static void   cpuid_print_tmul_info( const tmul_info_t* out );
+static void   cpuid_proc_freq_info( proc_freq_info_t* out );
+static void   cpuid_print_proc_freq_info( const proc_freq_info_t* out );
 
 void cpuid( int eax, int ecx, cpuid_t *reg )
 {
@@ -182,6 +184,16 @@ size_t cpuid_extend_topology( size_t n, extend_topology_t* out )
     }
   }
   return retval;
+}
+
+// 16H
+void   cpuid_proc_freq_info( proc_freq_info_t* out )
+{
+  cpuid_t reg={0};
+  cpuid(0x1d,0,&reg);
+  out->proc_base_freq = ((reg.eax)&0xffff);
+  out->max_freq       = ((reg.ebx)&0xffff);
+  out->bus_freq       = ((reg.ecx)&0xffff);
 }
 
 // 1DH
@@ -565,6 +577,15 @@ void cpuid_print_extend_topology( size_t n, const extend_topology_t* out )
 
 }
 
+// 16H
+void   cpuid_print_proc_freq_info( const proc_freq_info_t* out )
+{
+  printf("Processor Base Frequency (MHz)     : %u\n",out->proc_base_freq);
+  printf("Maximum Frequency (MHz)            : %u\n",out->max_freq);
+  printf("Bus (Reference) Frequency (MHz)    : %u\n",out->bus_freq);
+}
+
+
 // 1DH
 void cpuid_print_tile_palettes( size_t max_palette, const tile_info_t* out )
 {
@@ -706,6 +727,11 @@ void read_cpuid_info( cpuid_info_t* out )
     out->num_tplevel = 0;
   }
 
+  // 16H
+  if( out->basic_info.max_support >= 0x16 ){
+     cpuid_proc_freq_info(&(out->proc_freq_info));
+  } 
+
   // 1DH
   if( out->basic_info.max_support >= 0x1D ){
     out->max_palette = 
@@ -726,6 +752,10 @@ void write_cpuid_info( const cpuid_info_t* out )
   cpuid_print_basic_info(&(out->basic_info));
   cpuid_print_extend_info(&(out->extend_info));
 
+  // 16H
+  if( out->basic_info.max_support >= 0x16 ){
+     cpuid_print_proc_freq_info(&(out->proc_freq_info));
+  } 
   // 07H
   if( out->basic_info.max_support >= 0x07 ){
     cpuid_print_extend_features(out->num_ftlevel,out->more_feature);

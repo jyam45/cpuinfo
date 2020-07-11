@@ -83,6 +83,13 @@ typedef struct _extend_topology_t {
 	unsigned int  apic_id;
 	} extend_topology_t;
 
+// 16H
+typedef struct _proc_freq_info_t {
+	unsigned int  proc_base_freq;
+	unsigned int  max_freq;
+	unsigned int  bus_freq;
+	} proc_freq_info_t;
+
 // 1DH
 typedef struct _tile_info_t {
 	unsigned int  total_tile_bytes;
@@ -121,6 +128,7 @@ typedef struct _cpuid_info_t {
         extend_topology_t topology[MAX_FTLEVEL];
 	tile_info_t       tile_info[MAX_PLLEVEL];
 	tmul_info_t       tmul_info;
+	proc_freq_info_t  proc_freq_info;
 	size_t            num_caches;
 	size_t            num_ftlevel;
 	size_t            num_tplevel;
